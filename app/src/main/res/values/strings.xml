@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Android_Photos</string>
+    <string name ="homeTitle">Albums</string>
+    <string name ="albumNameField">Enter Album Name</string>
+    <string name =""
 </resources>
