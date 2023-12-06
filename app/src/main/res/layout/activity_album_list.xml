@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AlbumList">
+
+    <LinearLayout
+        android:id="@+id/albumLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="10dp"
+        tools:ignore="UselessParent">
+
+        <TextView
+            android:id="@+id/textViewAlbums"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:text="@string/albums"
+            android:textSize="18sp" />
+
+        <ListView
+            android:id="@+id/albumListView"
+            android:layout_width="match_parent"
+            android:layout_height="328dp"
+            android:layout_marginBottom="10dp" />
+
+        <LinearLayout
+            android:id="@+id/buttonLayout"
+            android:layout_width="match_parent"
+            android:layout_height="95dp"
+            android:orientation="horizontal"
+            android:weightSum="5">
+
+            <EditText
+                android:id="@+id/albumNameField"
+                android:layout_width="0dp"
+                android:layout_height="84dp"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="3"
+                android:hint="@string/enter_album_name"
+                android:inputType="text"
+                android:textColorHint="#8D6E63"
+                android:autofillHints=""
+                tools:ignore="VisualLintTextFieldSize" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/openAlbumButton"
+                    android:layout_width="166dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="5dp"
+                    android:layout_weight="1"
+                    android:onClick="onOpenAlbumButtonClicked"
+                    android:text="@string/open_album"
+                    tools:ignore="NestedWeights" />
+
+                <Button
+                    android:id="@+id/renameAlbumButton"
+                    android:layout_width="165dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="onRenameAlbumButtonClicked"
+                    android:text="@string/rename_album" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/createAlbumButton"
+                    android:layout_width="170dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="5dp"
+                    android:layout_weight="1"
+                    android:onClick="onCreateAlbumButtonClicked"
+                    android:text="@string/create_album"
+                    tools:ignore="NestedWeights" />
+
+                <Button
+                    android:id="@+id/deleteAlbumButton"
+                    android:layout_width="171dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="onDeleteAlbumButtonClicked"
+                    android:text="@string/delete_album" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>
