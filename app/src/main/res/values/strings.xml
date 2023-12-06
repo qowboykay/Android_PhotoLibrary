@@ -2,5 +2,14 @@
     <string name="app_name">Android_Photos</string>
     <string name ="homeTitle">Albums</string>
     <string name ="albumNameField">Enter Album Name</string>
-    <string name =""
+    <string name="enter_album_name">Enter album name</string>
+    <string name="create_album">Create Album</string>
+    <string name="delete_album">Delete Album</string>
+    <string name="open_album">Open Album</string>
+    <string name="rename_album">Rename Album</string>
+    <string name="albums">Albums</string>
+
+    //Alerts
+
+    //Messages
 </resources>
