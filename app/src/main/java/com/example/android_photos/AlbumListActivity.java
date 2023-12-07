@@ -1,36 +1,25 @@
 package com.example.android_photos;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.android_photos.Album;
-import com.example.android_photos.User;
-
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class AlbumList extends AppCompatActivity {
+public class AlbumListActivity extends AppCompatActivity {
 
-    private ListView albumListView;
     private ArrayAdapter<Album> allAlbums;
     private EditText albumNameField;
-    private Button createAlbumButton;
-    private Button deleteAlbumButton;
-    private Button renameAlbumButton;
-    private Button openAlbumButton;
     private User currentUser;
     private Album selectedAlbum;
 
@@ -40,12 +29,12 @@ public class AlbumList extends AppCompatActivity {
         setContentView(R.layout.activity_album_list);
 
         // Initialize UI components
-        albumListView = findViewById(R.id.albumListView);
+        ListView albumListView = findViewById(R.id.albumListView);
         albumNameField = findViewById(R.id.albumNameField);
-        createAlbumButton = findViewById(R.id.createAlbumButton);
-        deleteAlbumButton = findViewById(R.id.deleteAlbumButton);
-        renameAlbumButton = findViewById(R.id.renameAlbumButton);
-        openAlbumButton = findViewById(R.id.openAlbumButton);
+        Button createAlbumButton = findViewById(R.id.createAlbumButton);
+        Button deleteAlbumButton = findViewById(R.id.deleteAlbumButton);
+        Button renameAlbumButton = findViewById(R.id.renameAlbumButton);
+        Button openAlbumButton = findViewById(R.id.openAlbumButton);
 
         // Retrieve the current user from UserManager
         UserManager userManager = UserManager.getInstance();
@@ -60,15 +49,12 @@ public class AlbumList extends AppCompatActivity {
         allAlbums = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, currentUser.getListOfUserAlbums());
         albumListView.setAdapter(allAlbums);
 
-            albumListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    selectedAlbum = (Album) parent.getItemAtPosition(position);
+            albumListView.setOnItemClickListener((parent, view, position, id) -> {
+                selectedAlbum = (Album) parent.getItemAtPosition(position);
 
-                    // Now you have the selected album, you can implement your logic here.
-                    // For example, you can display album details, navigate to another activity, etc.
-                    Toast.makeText(AlbumList.this, "Selected Album: " + selectedAlbum.getAlbumName(), Toast.LENGTH_SHORT).show();
-                }
+                // Now you have the selected album, you can implement your logic here.
+                // For example, you can display album details, navigate to another activity, etc.
+                Toast.makeText(AlbumListActivity.this, "Selected Album: " + selectedAlbum.getAlbumName(), Toast.LENGTH_SHORT).show();
             });
 
         // Set click listeners for buttons
@@ -142,8 +128,23 @@ public class AlbumList extends AppCompatActivity {
 
 
     private void onOpenAlbumButtonClicked() {
-        // Implement open album logic
+
+        if (selectedAlbum != null) {
+            // Create an Intent to start AlbumViewActivity
+            Intent intent = new Intent(this, AlbumViewActivity.class);
+
+            // Pass the selected album to AlbumViewActivity
+            intent.putExtra("selectedAlbum", selectedAlbum);
+
+            // Start AlbumViewActivity
+            startActivity(intent);
+            selectedAlbum = null;
+        } else {
+            // Handle the case where no album is selected
+            Toast.makeText(this, "Please select an album to open.", Toast.LENGTH_SHORT).show();
+        }
     }
+
 
     public boolean albumExists(String albumName){
         List<Album> currentAlbums = IntStream.range(0, allAlbums.getCount())
@@ -151,4 +152,5 @@ public class AlbumList extends AppCompatActivity {
                 .collect(Collectors.toList());
         return currentAlbums.stream().anyMatch(album -> album.getAlbumName().equals(albumName));
     }
+
 }

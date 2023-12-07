@@ -17,8 +17,12 @@
             android:exported="true">
             </activity>
         <activity
-            android:name=".AlbumList"
+            android:name=".AlbumListActivity"
             android:exported="true">
+        </activity>
+            <activity
+                android:name=".AlbumViewActivity"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

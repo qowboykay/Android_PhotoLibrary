@@ -23,14 +23,7 @@ public class User implements Parcelable {
         this.username = username;
         this.albumList = new ArrayList<>();
     }
-    /**
-     * Sets a new username for the user.
-     *
-     * @param username The new username to be set.
-     */
-    public void setNewUsername(String username){
-        this.username = username;
-    }
+
     /**
      * Retrieves the username of the user.
      *
@@ -47,14 +40,7 @@ public class User implements Parcelable {
     public void addAlbum(Album album){
         this.albumList.add(album);
     }
-    /**
-     * Gets the number of albums in the user's collection.
-     *
-     * @return The number of albums.
-     */
-    public int getNumberofAlbums(){
-        return albumList.size();
-    }
+
     /**
      * Retrieves a list of all albums in the user's collection.
      *

@@ -8,6 +8,12 @@
     <string name="open_album">Open Album</string>
     <string name="rename_album">Rename Album</string>
     <string name="albums">Albums</string>
+    <string name="add">Add</string>
+    <string name="back">Back</string>
+    <string name="delete">Delete</string>
+    <string name="recaption">Recaption</string>
+    <string name="search">Search</string>
+    <string name="album_view">Album View</string>
 
     //Alerts
 
