@@ -3,12 +3,14 @@ package com.example.android_photos;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Tag implements Parcelable {
+public class Tag implements Serializable {
 
     private String tagName;
     private ArrayList<String> tagValues;
+    static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new Tag with the specified name.
@@ -62,32 +64,4 @@ public class Tag implements Parcelable {
     public String toString() {
         return tagName + ": " + String.join(", ", tagValues);
     }
-
-    protected Tag(Parcel in) {
-        tagName = in.readString();
-        tagValues = in.createStringArrayList();
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(tagName);
-        dest.writeStringList(tagValues);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    public static final Creator<Tag> CREATOR = new Creator<Tag>() {
-        @Override
-        public Tag createFromParcel(Parcel in) {
-            return new Tag(in);
-        }
-
-        @Override
-        public Tag[] newArray(int size) {
-            return new Tag[size];
-        }
-    };
 }

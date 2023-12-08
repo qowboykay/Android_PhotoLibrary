@@ -11,9 +11,13 @@
     <string name="add">Add</string>
     <string name="back">Back</string>
     <string name="delete">Delete</string>
-    <string name="recaption">Recaption</string>
     <string name="search">Search</string>
     <string name="album_view">Album View</string>
+    <string name="placeholder_description" />
+    <string name="image">Image</string>
+    <string name="todo">TODO</string>
+    <string name="todo1">TODO</string>
+    <string name="open">Open</string>
 
     //Alerts
 

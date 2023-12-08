@@ -4,15 +4,17 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.widget.ArrayAdapter;
 
-import java.io.*;
-import java.util.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class Album implements Parcelable {
+public class Album implements Serializable {
 
         static final long serialVersionUID = 1L;
         private String albumName;
-        private final ArrayList<Picture> pics;
+        private ArrayList<Picture> pics;
         private ArrayAdapter<Album> albums;
 
         public Album(String albumName) {
@@ -54,6 +56,7 @@ public class Album implements Parcelable {
         public void addPicture(Picture pic) {
             this.pics.add(pic);
         }
+        public void addPictureList(ArrayList<Picture> pics){this.pics =  pics;}
 
         public void deletePicture(Picture pic) {
             pics.remove(pic);
@@ -127,33 +130,7 @@ public class Album implements Parcelable {
             return albumName;
         }
 
-    protected Album(Parcel in) {
-        albumName = in.readString();
-        pics = in.createTypedArrayList(Picture.CREATOR);
-    }
 
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(albumName);
-        dest.writeTypedList(pics);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    public static final Creator<Album> CREATOR = new Creator<Album>() {
-        @Override
-        public Album createFromParcel(Parcel in) {
-            return new Album(in);
-        }
-
-        @Override
-        public Album[] newArray(int size) {
-            return new Album[size];
-        }
-    };
 }
 
 

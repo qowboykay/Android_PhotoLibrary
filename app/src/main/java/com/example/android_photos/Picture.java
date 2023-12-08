@@ -7,37 +7,35 @@ import android.os.Parcelable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
+import android.net.Uri;
 
-public class Picture implements Parcelable {
+public class Picture implements Serializable {
 
-    private String picturePath;
     private String caption;
     private ArrayList<Tag> tags;
     private transient Bitmap image;
+    private Uri uri;
+    private String id;
+    static final long serialVersionUID = 1L;
 
-    /**
-     * Constructs a new Picture object with specified path and caption.
-     *
-     * @param picturePath The file path of the picture.
-     * @param caption     The caption of the picture.
-     * @throws IOException If there is an issue loading the picture from the path.
-     */
-    public Picture(String picturePath, String caption) throws IOException {
-        this.picturePath = picturePath;
+
+    public Picture(Uri uri, String caption, String id) throws IOException {
+        this.uri = uri;
         this.caption = caption;
         this.tags = new ArrayList<Tag>();
-        File file = new File(picturePath);
-        //Add method to load picture
+        this.id = id;
     }
 
 
-    public String getPicturePath() {
-        return picturePath;
+    public Uri getUri() {
+        return uri;
     }
+    public String getId() {return id;}
 
 
     public String getCaption() {
@@ -45,7 +43,7 @@ public class Picture implements Parcelable {
     }
 
 
-    public void recaptionPhoto(String caption) {
+    public void recaptionPicture(String caption) {
         this.caption = caption;
     }
 
@@ -74,43 +72,17 @@ public class Picture implements Parcelable {
         return image;
     }
 
-    protected Picture(Parcel in) {
-        picturePath = in.readString();
-        caption = in.readString();
-        tags = in.createTypedArrayList(Tag.CREATOR);
-        byte[] byteArray = in.createByteArray();
-        image = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+
+    public String getFileName() {
+        return getFileNameFromUri(uri);
     }
 
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(picturePath);
-        dest.writeString(caption);
-        dest.writeTypedList(tags);
-
-        // Convert Bitmap to byte array for serialization
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        image.compress(Bitmap.CompressFormat.PNG, 100, stream);
-        byte[] byteArray = stream.toByteArray();
-        dest.writeByteArray(byteArray);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    public static final Creator<Picture> CREATOR = new Creator<Picture>() {
-        @Override
-        public Picture createFromParcel(Parcel in) {
-            return new Picture(in);
+    private String getFileNameFromUri(Uri uri) {
+        String fileName = null;
+        if (uri != null) {
+            File file = new File(uri.getPath());
+            fileName = file.getName();
         }
-
-        @Override
-        public Picture[] newArray(int size) {
-            return new Picture[size];
-        }
-    };
-
-
+        return fileName;
+    }
 }
