@@ -1,36 +1,49 @@
 package com.example.android_photos;
 
-import static java.lang.Long.parseLong;
-
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.GridLayout;
-import android.widget.ImageView;
-import android.widget.TextView;
 
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.List;
 import java.util.UUID;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class AlbumViewActivity extends AppCompatActivity {
-
-    private static final int PICK_PICTURE_REQUEST = 1;
+    private static final int PERMISSION_REQUEST_CODE = 123;
+    private static final int REQUEST_IMAGE_GET = 2;
     private Button backButton;
     private Button deleteButton;
     private Button openButton;
@@ -41,6 +54,7 @@ public class AlbumViewActivity extends AppCompatActivity {
     private PictureAdapter pictureAdapter;
     private ArrayList<Picture> pictureList;
     private ArrayList<Album> savedAlbums;
+    private static final String IMAGES_FOLDER_NAME = "album_images";
 
 
     @SuppressLint("MissingInflatedId")
@@ -51,11 +65,22 @@ public class AlbumViewActivity extends AppCompatActivity {
         Intent intent = getIntent();
         selectedAlbum =(Album) intent.getSerializableExtra("selectedAlbum");
         savedAlbums = (ArrayList<Album>) intent.getSerializableExtra("savedAlbums");
+        selectedAlbum = savedAlbums.stream()
+                .filter(album -> album.getAlbumName().equals(selectedAlbum.getAlbumName()))
+                .findFirst()
+                .orElse(null);
         TextView albumNameTextView = findViewById(R.id.textViewAlbumView);
         albumNameTextView.setText("Album Name: " + selectedAlbum.getAlbumName());
         pictureRecyclerView = findViewById(R.id.pictureRecyclerView);
-        pictureList = new ArrayList<>();
-        selectedAlbum.addPictureList(pictureList);
+        pictureList = selectedAlbum.returnPictures();
+        if (pictureList == null || pictureList.isEmpty()) {
+            pictureList = new ArrayList<>();
+            selectedAlbum.addPictureList(pictureList);
+        }
+        File imagesFolder = new File(getFilesDir(), IMAGES_FOLDER_NAME);
+        if (!imagesFolder.exists()) {
+            imagesFolder.mkdir();
+        }
         pictureAdapter = new PictureAdapter(pictureList);
         pictureRecyclerView.setAdapter(pictureAdapter);
         int spanCount = 3; // Number of columns in the grid
@@ -78,7 +103,19 @@ public class AlbumViewActivity extends AppCompatActivity {
 
 
     private void onBackButtonClicked() {
-        finish();
+        // Update the selected album in savedAlbums
+        savedAlbums.stream()
+                .filter(album -> album.getAlbumName().equals(selectedAlbum.getAlbumName()))
+                .findFirst()
+                .ifPresent(album -> album.addPictureList(selectedAlbum.returnPictures()));
+
+        List<Uri> allPictureUris = savedAlbums.stream()
+                .flatMap(album -> album.returnPictures().stream())
+                .map(Picture::getUri)
+                .collect(Collectors.toList());
+
+        Log.d("Debug","Saved Photos:"  + allPictureUris);
+        setResultAndFinish();
     }
 
     private void onDeleteButtonClicked() {
@@ -94,67 +131,131 @@ public class AlbumViewActivity extends AppCompatActivity {
     }
 
     private void onAddButtonClicked() {
-        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+        Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
         photoPickerIntent.setType("image/*");
-        startActivityForResult(photoPickerIntent, PICK_PICTURE_REQUEST);
-        saveAlbums();
-
-
-    }
-
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == PICK_PICTURE_REQUEST && resultCode == RESULT_OK) {
-            // Handle the selected photo
-            if (data != null) {
-                Uri selectedImageUri = data.getData();
-                String fileName = getFileName(selectedImageUri);
-                Picture selectedPicture = null;
-                try {
-                    selectedPicture = new Picture(selectedImageUri, fileName , generateUniqueId());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                // Add the picture to the album (update your album data structure)
-                selectedAlbum.addPicture(selectedPicture);
-                // Notify the adapter that the data set has changed
-                pictureAdapter.notifyDataSetChanged();
-            }
+        if (photoPickerIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(photoPickerIntent, REQUEST_IMAGE_GET);
         }
     }
 
 
-    private String generateUniqueId() {
-        return UUID.randomUUID().toString();
-    }
-    private String getFileName(Uri uri) {
-        String result = null;
-        if (uri.getScheme().equals("content")) {
-            try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
-                if (cursor != null && cursor.moveToFirst()) {
-                    int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                    if (index != -1) {
-                        result = cursor.getString(index);
+        protected void onActivityResult ( int requestCode, int resultCode, @Nullable Intent data){
+            super.onActivityResult(requestCode, resultCode, data);
+
+            if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
+                // Handle the selected photo
+                if (data != null) {
+                    Uri selectedImageUri = data.getData();
+                    String fileName = getFileName(selectedImageUri);
+
+                    // Save the image to the folder
+                    saveImageToFile(selectedImageUri, fileName);
+
+                    // Create a Picture object with the file URI
+                    Picture selectedPicture = null;
+                    try {
+                        selectedPicture = new Picture(getImageFileUri(fileName), fileName, generateUniqueId());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    selectedAlbum.addPicture(selectedPicture);
+                    pictureAdapter.notifyDataSetChanged();
+                    saveAlbums();
+
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra("updatedSavedAlbums", savedAlbums);
+                    setResult(RESULT_OK, resultIntent);
+                }
+            }
+        }
+
+        private Uri getImageFileUri(String fileName) {
+            File imageFile = new File(getFilesDir() + File.separator + IMAGES_FOLDER_NAME, fileName);
+            return Uri.fromFile(imageFile);
+        }
+        private String generateUniqueId () {
+            return UUID.randomUUID().toString();
+        }
+        private void saveImageToFile(Uri sourceUri, String fileName) {
+            InputStream inputStream = null;
+            OutputStream outputStream = null;
+
+            try {
+                inputStream = getContentResolver().openInputStream(sourceUri);
+                File outputFile = new File(getFilesDir() + File.separator + IMAGES_FOLDER_NAME, fileName);
+                outputStream = new FileOutputStream(outputFile);
+
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = inputStream.read(buffer)) > 0) {
+                    outputStream.write(buffer, 0, length);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (inputStream != null) inputStream.close();
+                    if (outputStream != null) outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    private String getFileName (Uri uri){
+            String result = null;
+            if (uri.getScheme().equals("content")) {
+                try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        if (index != -1) {
+                            result = cursor.getString(index);
+                        }
                     }
                 }
             }
+            if (result == null) {
+                result = uri.getLastPathSegment();
+            }
+            return result;
         }
-        if (result == null) {
-            result = uri.getLastPathSegment();
+        private void setResultAndFinish () {
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra("updatedSavedAlbums", savedAlbums);
+            setResult(RESULT_OK, resultIntent);
+            finish();
         }
-        return result;
-    }
+        private void saveAlbums() {
+            try {
+                // Before saving
+                FileOutputStream fos = openFileOutput("saved_albums.ser", Context.MODE_PRIVATE);
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                Log.d("Debug", "Saved Albums: " + savedAlbums.toString());
+                oos.writeObject(savedAlbums);
+                oos.close();
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-    private void saveAlbums() {
+    @SuppressWarnings("unchecked")
+    private void loadAlbums() {
         try {
-            FileOutputStream fos = openFileOutput("saved_albums.ser", Context.MODE_PRIVATE);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(savedAlbums);
-            oos.close();
-            fos.close();
-        } catch (IOException e) {
+            FileInputStream fis = openFileInput("saved_albums.ser");
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            savedAlbums = (ArrayList<Album>) ois.readObject();
+            ois.close();
+            fis.close();
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+
+        // If the savedAlbums list is null, initialize it
+        if (savedAlbums == null) {
+            savedAlbums = new ArrayList<>();
+        }
     }
+
 }

@@ -1,7 +1,12 @@
 package com.example.android_photos;
 
+
+import static android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION;
+import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.util.Log;
@@ -11,10 +16,14 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.content.Intent;
+import android.Manifest;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.gson.Gson;
 
@@ -30,7 +39,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class AlbumListActivity extends AppCompatActivity {
-
+    private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final int ALBUM_VIEW_REQUEST_CODE = 123;
+    private static final int YOUR_REQUEST_CODE = 234;
     private ArrayAdapter<Album> allAlbums;
     private EditText albumNameField;
     private Album selectedAlbum;
@@ -48,6 +59,7 @@ public class AlbumListActivity extends AppCompatActivity {
         Button deleteAlbumButton = findViewById(R.id.deleteAlbumButton);
         Button renameAlbumButton = findViewById(R.id.renameAlbumButton);
         Button openAlbumButton = findViewById(R.id.openAlbumButton);
+
         if(loadAlbumsFromFile() == null) {
             savedAlbums = new ArrayList<>();
             Album defaultAlbum = new Album("defaultAlbum");
@@ -59,6 +71,7 @@ public class AlbumListActivity extends AppCompatActivity {
             // Set click listener for album selection
             allAlbums = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, savedAlbums);
             albumListView.setAdapter(allAlbums);
+
 
             albumListView.setOnItemClickListener((parent, view, position, id) -> {
                 selectedAlbum = (Album) parent.getItemAtPosition(position);
@@ -84,6 +97,7 @@ public class AlbumListActivity extends AppCompatActivity {
                     savedAlbums.add(newAlbum);
                     allAlbums.notifyDataSetChanged();
                     saveAlbumsToFile(savedAlbums);
+                    loadAlbumsFromFile();
                     Toast.makeText(this, "Success!", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "An album with that name already exists", Toast.LENGTH_SHORT).show();
@@ -141,23 +155,34 @@ public class AlbumListActivity extends AppCompatActivity {
         private void onOpenAlbumButtonClicked () {
 
             if (selectedAlbum != null) {
-                // Create an Intent to start AlbumViewActivity
-                Intent intent = new Intent(this, AlbumViewActivity.class);
-                intent.putExtra("albums", (Serializable) savedAlbums);
-                // Pass the selected album to AlbumViewActivity
-                intent.putExtra("selectedAlbum", selectedAlbum);
-
-                // Start AlbumViewActivity
-                startActivity(intent);
+                checkAndRequestPermissions();
+               startAlbumViewActivity(selectedAlbum);
                 selectedAlbum = null;
             } else {
                 // Handle the case where no album is selected
                 Toast.makeText(this, "Please select an album to open.", Toast.LENGTH_SHORT).show();
             }
         }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == ALBUM_VIEW_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Check if the result contains the updated savedAlbums list
+            if (data != null && data.hasExtra("updatedSavedAlbums")) {
+                ArrayList<Album> updatedSavedAlbums = (ArrayList<Album>) data.getSerializableExtra("updatedSavedAlbums");
+
+                // Update your UI or perform any other actions with the updated list
+                // For example, you might want to update your RecyclerView with the new data
+                savedAlbums = updatedSavedAlbums;
+                allAlbums.notifyDataSetChanged();
+            }
+        }
+    }
 
 
-        public boolean albumExists (String albumName){
+
+    public boolean albumExists (String albumName){
             List<Album> currentAlbums = IntStream.range(0, allAlbums.getCount())
                     .mapToObj(allAlbums::getItem)
                     .collect(Collectors.toList());
@@ -222,4 +247,59 @@ public class AlbumListActivity extends AppCompatActivity {
         }
     }
 
+    private void startAlbumViewActivity(Album selectedAlbum) {
+        Intent intent = new Intent(this, AlbumViewActivity.class);
+        intent.putExtra("selectedAlbum", selectedAlbum);
+        intent.putExtra("savedAlbums", savedAlbums);
+        startActivityForResult(intent, ALBUM_VIEW_REQUEST_CODE);
     }
+    private void checkAndRequestPermissions() {
+        String[] permissions = {
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                // Add other necessary permissions
+        };
+
+        List<String> permissionsToRequest = new ArrayList<>();
+
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                // Permission is not granted, add it to the list of permissions to request
+                permissionsToRequest.add(permission);
+            }
+        }
+
+        if (!permissionsToRequest.isEmpty()) {
+            // Convert the list to an array and request the permissions
+            String[] permissionsArray = permissionsToRequest.toArray(new String[0]);
+            ActivityCompat.requestPermissions(this, permissionsArray, PERMISSION_REQUEST_CODE);
+        } else {
+            // All permissions are already granted
+            // Continue with your app logic here
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            // Check if all permissions are granted
+            boolean allPermissionsGranted = true;
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                // Continue with your app logic here
+            } else {
+                Toast.makeText(this, "Permissions not granted. App may not function properly.", Toast.LENGTH_SHORT).show();
+                finish(); // Close the app or handle it gracefully
+            }
+        }
+    }
+}

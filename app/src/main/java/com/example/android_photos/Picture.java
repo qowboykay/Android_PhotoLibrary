@@ -1,15 +1,12 @@
 package com.example.android_photos;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Parcel;
-import android.os.Parcelable;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Serial;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import android.net.Uri;
@@ -19,7 +16,7 @@ public class Picture implements Serializable {
     private String caption;
     private ArrayList<Tag> tags;
     private transient Bitmap image;
-    private Uri uri;
+    private transient Uri uri;
     private String id;
     static final long serialVersionUID = 1L;
 
@@ -85,4 +82,16 @@ public class Picture implements Serializable {
         }
         return fileName;
     }
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        // Serialize the necessary fields of Uri
+        out.writeUTF(uri.toString());
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // Deserialize the necessary fields of Uri
+        uri = Uri.parse(in.readUTF());
+    }
 }
+
