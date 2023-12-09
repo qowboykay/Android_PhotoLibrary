@@ -46,14 +46,13 @@ public class AlbumListActivity extends AppCompatActivity {
     private EditText albumNameField;
     private Album selectedAlbum;
     protected ArrayList<Album> savedAlbums;
+    private ListView albumListView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album_list);
-
-        // Initialize UI components
-        ListView albumListView = findViewById(R.id.albumListView);
+        albumListView = findViewById(R.id.albumListView);
         albumNameField = findViewById(R.id.albumNameField);
         Button createAlbumButton = findViewById(R.id.createAlbumButton);
         Button deleteAlbumButton = findViewById(R.id.deleteAlbumButton);
@@ -156,6 +155,7 @@ public class AlbumListActivity extends AppCompatActivity {
 
             if (selectedAlbum != null) {
                 checkAndRequestPermissions();
+                saveAlbumsToFile(savedAlbums);
                startAlbumViewActivity(selectedAlbum);
                 selectedAlbum = null;
             } else {
@@ -174,7 +174,9 @@ public class AlbumListActivity extends AppCompatActivity {
 
                 // Update your UI or perform any other actions with the updated list
                 // For example, you might want to update your RecyclerView with the new data
-                savedAlbums = updatedSavedAlbums;
+                savedAlbums = loadAlbumsFromFile();
+                allAlbums = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, savedAlbums);
+                albumListView.setAdapter(allAlbums);
                 allAlbums.notifyDataSetChanged();
             }
         }

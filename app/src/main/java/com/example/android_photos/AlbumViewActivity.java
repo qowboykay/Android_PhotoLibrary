@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Build;
@@ -41,7 +42,7 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-public class AlbumViewActivity extends AppCompatActivity {
+public class AlbumViewActivity extends AppCompatActivity implements PictureAdapter.OnItemClickListener {
     private static final int PERMISSION_REQUEST_CODE = 123;
     private static final int REQUEST_IMAGE_GET = 2;
     private Button backButton;
@@ -62,9 +63,11 @@ public class AlbumViewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album_view);
+        loadAlbumsFromFile();
         Intent intent = getIntent();
         selectedAlbum =(Album) intent.getSerializableExtra("selectedAlbum");
         savedAlbums = (ArrayList<Album>) intent.getSerializableExtra("savedAlbums");
+        saveAlbumsToFile(savedAlbums);
         selectedAlbum = savedAlbums.stream()
                 .filter(album -> album.getAlbumName().equals(selectedAlbum.getAlbumName()))
                 .findFirst()
@@ -75,6 +78,7 @@ public class AlbumViewActivity extends AppCompatActivity {
         pictureList = selectedAlbum.returnPictures();
         if (pictureList == null || pictureList.isEmpty()) {
             pictureList = new ArrayList<>();
+            Log.d("Debug", "Its empty");
             selectedAlbum.addPictureList(pictureList);
         }
         File imagesFolder = new File(getFilesDir(), IMAGES_FOLDER_NAME);
@@ -82,6 +86,7 @@ public class AlbumViewActivity extends AppCompatActivity {
             imagesFolder.mkdir();
         }
         pictureAdapter = new PictureAdapter(pictureList);
+        pictureAdapter.setOnItemClickListener(this);
         pictureRecyclerView.setAdapter(pictureAdapter);
         int spanCount = 3; // Number of columns in the grid
         pictureRecyclerView.setLayoutManager(new GridLayoutManager(this, spanCount));
@@ -119,7 +124,15 @@ public class AlbumViewActivity extends AppCompatActivity {
     }
 
     private void onDeleteButtonClicked() {
-        // Add code to handle delete button click
+        List<Integer> selectedPositions = pictureAdapter.getSelectedPositions();
+        for (int i = selectedPositions.size() - 1; i >= 0; i--) {
+            int position = selectedPositions.get(i);
+            pictureList.remove(position);
+            pictureAdapter.notifyItemRemoved(position);
+        }
+        selectedAlbum.addPictureList(pictureList);
+        pictureAdapter.clearSelection();
+        saveAlbumsToFile(savedAlbums);
     }
 
     private void onOpenButtonClicked() {
@@ -139,29 +152,34 @@ public class AlbumViewActivity extends AppCompatActivity {
     }
 
 
-        protected void onActivityResult ( int requestCode, int resultCode, @Nullable Intent data){
-            super.onActivityResult(requestCode, resultCode, data);
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-            if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
-                // Handle the selected photo
-                if (data != null) {
-                    Uri selectedImageUri = data.getData();
-                    String fileName = getFileName(selectedImageUri);
+        if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
+            // Handle the selected photo
+            if (data != null) {
+                Uri selectedImageUri = data.getData();
+                String fileName = getFileName(selectedImageUri);
 
-                    // Save the image to the folder
-                    saveImageToFile(selectedImageUri, fileName);
+                // Create a Bitmap from the selected image
+                Bitmap selectedBitmap = null;
+                try {
+                    selectedBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-                    // Create a Picture object with the file URI
+                // Create a Picture object with the Bitmap
+                if (selectedBitmap != null) {
                     Picture selectedPicture = null;
                     try {
-                        selectedPicture = new Picture(getImageFileUri(fileName), fileName, generateUniqueId());
+                        selectedPicture = new Picture(getImageFileUri(fileName),fileName,generateUniqueId(),selectedBitmap);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-
                     selectedAlbum.addPicture(selectedPicture);
                     pictureAdapter.notifyDataSetChanged();
-                    saveAlbums();
+                    saveAlbumsToFile(savedAlbums);
 
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("updatedSavedAlbums", savedAlbums);
@@ -169,8 +187,10 @@ public class AlbumViewActivity extends AppCompatActivity {
                 }
             }
         }
+    }
 
-        private Uri getImageFileUri(String fileName) {
+
+    private Uri getImageFileUri(String fileName) {
             File imageFile = new File(getFilesDir() + File.separator + IMAGES_FOLDER_NAME, fileName);
             return Uri.fromFile(imageFile);
         }
@@ -258,4 +278,67 @@ public class AlbumViewActivity extends AppCompatActivity {
         }
     }
 
+    protected void saveAlbumsToFile(ArrayList<Album> albums) {
+        Log.d("SaveAlbums", "Saving albums to file");
+        try {
+            // Open a file for writing in internal storage
+            FileOutputStream fileOutputStream = openFileOutput("albums.txt", Context.MODE_PRIVATE);
+
+            // Create a stream to write data
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+
+            // Write the size of the ArrayList
+            objectOutputStream.writeInt(albums.size());
+
+            // Write each Parcelable object to the file
+            for (Album album : albums) {
+                objectOutputStream.writeObject(album);
+            }
+
+            // Close the streams
+            objectOutputStream.close();
+            fileOutputStream.close();
+            Log.d("SaveAlbums", "File saved to: " + getFilesDir() + "/albums.txt");
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("SaveAlbums", "Error saving albums to file: " + e.getMessage());
+        }
+    }
+    protected ArrayList<Album> loadAlbumsFromFile() {
+        Log.d("LoadAlbums", "Loading albums from file");
+        try {
+            // Open the file for reading from internal storage
+            FileInputStream fileInputStream = openFileInput("albums.txt");
+
+            // Create a stream to read data
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+
+            // Read the size of the ArrayList
+            int size = objectInputStream.readInt();
+
+            // Read each Parcelable object from the file
+            ArrayList<Album> loadedAlbums = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                Album album = (Album) objectInputStream.readObject();
+                if (album != null) {
+                    loadedAlbums.add(album);
+                }
+            }
+
+            // Close the streams
+            objectInputStream.close();
+            fileInputStream.close();
+            Log.d("LoadAlbums", "File loaded from: " + getFilesDir() + "/albums.txt");
+            return loadedAlbums;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            Log.e("LoadAlbums", "Error loading albums from file: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public void onItemClick(int position) {
+        pictureAdapter.toggleSelection(position);
+    }
 }
