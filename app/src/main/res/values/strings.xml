@@ -15,9 +15,9 @@
     <string name="album_view">Album View</string>
     <string name="placeholder_description" />
     <string name="image">Image</string>
-    <string name="todo">TODO</string>
-    <string name="todo1">TODO</string>
     <string name="open">Open</string>
+    <string name="select_tag_name">Select Tag Name</string>
+    <string name="enter_tag_value">Enter Tag Value</string>
 
     //Alerts
 

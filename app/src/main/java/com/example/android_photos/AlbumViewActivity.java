@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,7 +44,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 public class AlbumViewActivity extends AppCompatActivity implements PictureAdapter.OnItemClickListener {
-    private static final int PERMISSION_REQUEST_CODE = 123;
+    private static final int PERMISSION_REQUEST_CODE = 998;
     private static final int REQUEST_IMAGE_GET = 2;
     private Button backButton;
     private Button deleteButton;
@@ -56,6 +57,7 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
     private ArrayList<Picture> pictureList;
     private ArrayList<Album> savedAlbums;
     private static final String IMAGES_FOLDER_NAME = "album_images";
+    private Picture selectedPicture;
 
 
     @SuppressLint("MissingInflatedId")
@@ -136,7 +138,10 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
     }
 
     private void onOpenButtonClicked() {
-        // Add code to handle recaption button click
+        Intent intent = new Intent(this, PictureViewActivity.class);
+        intent.putExtra("selectedPictureUri", selectedPicture.getUri().toString());
+        intent.putExtra("selectedAlbum", selectedAlbum);
+        startActivity(intent);
     }
 
     private void onSearchButtonClicked() {
@@ -144,11 +149,13 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
     }
 
     private void onAddButtonClicked() {
-        Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        photoPickerIntent.setType("image/*");
-        if (photoPickerIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(photoPickerIntent, REQUEST_IMAGE_GET);
-        }
+        Log.d("Debug", "Add button clicked");
+            Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
+            photoPickerIntent.setType("image/*");
+            Log.d("Debug", "passed permission");
+            if (photoPickerIntent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(photoPickerIntent, REQUEST_IMAGE_GET);
+            }
     }
 
 
@@ -173,6 +180,7 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
                 if (selectedBitmap != null) {
                     Picture selectedPicture = null;
                     try {
+                        saveImageToFile(selectedImageUri, fileName);
                         selectedPicture = new Picture(getImageFileUri(fileName),fileName,generateUniqueId(),selectedBitmap);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -180,7 +188,6 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
                     selectedAlbum.addPicture(selectedPicture);
                     pictureAdapter.notifyDataSetChanged();
                     saveAlbumsToFile(savedAlbums);
-
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("updatedSavedAlbums", savedAlbums);
                     setResult(RESULT_OK, resultIntent);
@@ -338,7 +345,64 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            // Check if all permissions are granted
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                // Permissions are granted, proceed with your app logic
+                // ...
+            } else {
+                // Some permissions were not granted
+                // Handle this case, possibly show a message to the user
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+    private boolean checkAndRequestPermissions() {
+        String[] permissions = {
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.MANAGE_EXTERNAL_STORAGE
+                // Add other necessary permissions
+        };
+
+        List<String> permissionsToRequest = new ArrayList<>();
+
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                // Permission is not granted, add it to the list of permissions to request
+                permissionsToRequest.add(permission);
+            }
+        }
+
+        if (!permissionsToRequest.isEmpty()) {
+            // Convert the list to an array and request the permissions on the UI thread
+            String[] permissionsArray = permissionsToRequest.toArray(new String[0]);
+
+            runOnUiThread(() -> {
+                ActivityCompat.requestPermissions(this, permissionsArray, PERMISSION_REQUEST_CODE);
+            });
+
+            return false;  // Permissions are not granted yet
+        } else {
+            // All permissions are already granted
+            // Continue with your app logic here
+            return true;  // Permissions are granted
+        }
+    }
+    @Override
     public void onItemClick(int position) {
+        selectedPicture = pictureList.get(position);
         pictureAdapter.toggleSelection(position);
     }
 }

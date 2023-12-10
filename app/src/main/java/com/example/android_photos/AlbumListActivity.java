@@ -25,7 +25,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.gson.Gson;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -39,7 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class AlbumListActivity extends AppCompatActivity {
-    private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final int PERMISSION_REQUEST_CODE = 999;
     private static final int ALBUM_VIEW_REQUEST_CODE = 123;
     private static final int YOUR_REQUEST_CODE = 234;
     private ArrayAdapter<Album> allAlbums;
@@ -166,7 +165,6 @@ public class AlbumListActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == ALBUM_VIEW_REQUEST_CODE && resultCode == RESULT_OK) {
             // Check if the result contains the updated savedAlbums list
             if (data != null && data.hasExtra("updatedSavedAlbums")) {
@@ -284,6 +282,8 @@ public class AlbumListActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d("Debug", "onRequestPermissionsResult called");
+
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == PERMISSION_REQUEST_CODE) {
