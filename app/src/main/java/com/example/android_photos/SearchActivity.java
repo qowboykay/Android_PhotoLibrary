@@ -14,6 +14,7 @@ import java.util.List;
 
 public class SearchActivity extends AppCompatActivity {
 
+    private Button backButton;
     private EditText searchTagEditText;
     private RecyclerView searchResultsRecyclerView;
     private ArrayList<Album> savedAlbums;
@@ -23,14 +24,23 @@ public class SearchActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 
+
         // Retrieve the album list passed from AlbumViewActivity
         savedAlbums = (ArrayList<Album>) getIntent().getSerializableExtra("savedAlbums");
 
+        backButton = findViewById(R.id.backButton);
         searchTagEditText = findViewById(R.id.searchTagEditText);
         searchResultsRecyclerView = findViewById(R.id.searchResultsRecyclerView);
         searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         Button searchButton = findViewById(R.id.searchButton);
+
+        backButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish(); // Close this activity
+            }
+        });
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
