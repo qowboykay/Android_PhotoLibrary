@@ -65,6 +65,9 @@ public class Picture implements Serializable {
         return tags.stream().anyMatch(tag -> tag.getTagName().equals(tagName) && tag.getAllTagValues().contains(tagValue));
     }
 
+    public ArrayList<Tag> getTags() {
+        return tags;
+    }
 
     @Override
     public String toString() {

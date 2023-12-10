@@ -124,7 +124,9 @@ public class Album implements Serializable {
             }
             return newAlbum;
         }
-
+    public ArrayList<Picture> getPics() {
+        return pics;
+    }
         @Override
         public String toString() {
             return albumName;
