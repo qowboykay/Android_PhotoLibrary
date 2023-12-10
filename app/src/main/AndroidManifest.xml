@@ -41,7 +41,10 @@
             android:name=".PictureViewActivity"
             android:exported="true">
         </activity>
-
+        <activity
+            android:name=".SearchActivity"
+            android:exported="true">
+        </activity>
     </application>
 
 </manifest>

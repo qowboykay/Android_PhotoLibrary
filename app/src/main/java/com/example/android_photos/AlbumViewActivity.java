@@ -145,9 +145,14 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
         startActivityForResult(intent, pictureViewRequestCode); // Use a unique request code
     }
 
-    private void onSearchButtonClicked() {
-        // Add code to handle search button click
+
+    public void onSearchButtonClicked() {
+        Intent intent = new Intent(this, SearchActivity.class);
+        // Since ArrayList<Album> is Serializable, we can pass it directly as an extra
+        intent.putExtra("savedAlbums", savedAlbums);
+        startActivity(intent);
     }
+
 
     private void onAddButtonClicked() {
         Log.d("Debug", "Add button clicked");
