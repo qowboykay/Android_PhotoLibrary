@@ -3,6 +3,7 @@ package com.example.android_photos;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -38,15 +39,20 @@ public class PictureViewActivity extends AppCompatActivity {
     private Album selectedAlbum;
     private ArrayList<Picture> pictureList;
     private int currentPictureIndex;
+    private Picture currentPicture;
     private String[] presetTagNames = {"Location", "Person"};
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.picture_view_activity);
-        savedAlbums = loadAlbumsFromFile();
         selectedAlbum = (Album)getIntent().getSerializableExtra("selectedAlbum");
+        savedAlbums = (ArrayList<Album>) getIntent().getSerializableExtra("savedAlbums");
         pictureList = selectedAlbum.returnPictures();
-        saveAlbumsToFile(savedAlbums);
+        if (pictureList == null || pictureList.isEmpty()) {
+            pictureList = new ArrayList<>();
+            Log.d("Debug", "Its empty");
+            selectedAlbum.addPictureList(pictureList);
+        }
         String selectedPictureUriString = getIntent().getStringExtra("selectedPictureUri");
         Uri selectedPictureUri = Uri.parse(selectedPictureUriString);
         // Set the URI to the ImageView
@@ -63,6 +69,7 @@ public class PictureViewActivity extends AppCompatActivity {
         addTagButton = findViewById(R.id.addTagButton);
 
         updateDisplayedPicture();
+        updateTagsTextView();
 
         backButton.setOnClickListener(v -> onBackButtonClicked());
         moveButton.setOnClickListener(v -> onMoveButtonClicked());
@@ -73,7 +80,7 @@ public class PictureViewActivity extends AppCompatActivity {
     }
 
     private void onBackButtonClicked(){
-        finish();
+        setResultAndFinish();
     }
     private void onMoveButtonClicked(){
 
@@ -120,11 +127,14 @@ public class PictureViewActivity extends AppCompatActivity {
                     // Create a new Tag object and add it to the current picture
                     Tag newTag = new Tag(selectedTagName);
                     newTag.addTagValue(tagValue);
-                    Picture currentPicture = pictureList.get(currentPictureIndex);
+                    currentPicture = pictureList.get(currentPictureIndex);
                     currentPicture.addTag(newTag);
                     saveAlbumsToFile(savedAlbums);
                     // Update the tagsTextView to display the tags
                     updateTagsTextView();
+                    if(savedAlbums == null){
+                        Log.d("Debug", "saved albums is null");
+                    }
                 } else {
                     Toast.makeText(PictureViewActivity.this, "Tag value cannot be empty", Toast.LENGTH_SHORT).show();
                 }
@@ -202,5 +212,12 @@ public class PictureViewActivity extends AppCompatActivity {
             Log.e("LoadAlbums", "Error loading albums from file: " + e.getMessage());
             return null;
         }
+    }
+
+    private void setResultAndFinish() {
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra("updatedSelectedAlbum", selectedAlbum);
+        setResult(RESULT_OK, resultIntent);
+        finish();
     }
 }

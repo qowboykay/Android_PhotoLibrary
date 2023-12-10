@@ -46,6 +46,8 @@ import java.util.stream.Collectors;
 public class AlbumViewActivity extends AppCompatActivity implements PictureAdapter.OnItemClickListener {
     private static final int PERMISSION_REQUEST_CODE = 998;
     private static final int REQUEST_IMAGE_GET = 2;
+    private static final int pictureViewRequestCode = 000;
+
     private Button backButton;
     private Button deleteButton;
     private Button openButton;
@@ -65,7 +67,6 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album_view);
-        loadAlbumsFromFile();
         Intent intent = getIntent();
         selectedAlbum =(Album) intent.getSerializableExtra("selectedAlbum");
         savedAlbums = (ArrayList<Album>) intent.getSerializableExtra("savedAlbums");
@@ -141,7 +142,7 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
         Intent intent = new Intent(this, PictureViewActivity.class);
         intent.putExtra("selectedPictureUri", selectedPicture.getUri().toString());
         intent.putExtra("selectedAlbum", selectedAlbum);
-        startActivity(intent);
+        startActivityForResult(intent, pictureViewRequestCode); // Use a unique request code
     }
 
     private void onSearchButtonClicked() {
@@ -161,10 +162,21 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
 
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
+        if(requestCode == pictureViewRequestCode && resultCode == RESULT_OK) {
+            if(data != null){
+                selectedAlbum = (Album) data.getSerializableExtra("updatedSelectedAlbum");
+                pictureAdapter.notifyDataSetChanged();
+                saveAlbumsToFile(savedAlbums);
+                Log.d("Debug", "Saved!!!!");
+            }
+        }
         if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
-            // Handle the selected photo
             if (data != null) {
+                if(data.hasExtra("updatedSavedAlbums")) {
+                    savedAlbums = (ArrayList<Album>) data.getSerializableExtra("updatedSavedAlbums");
+                    saveAlbumsToFile(savedAlbums);
+                    Log.d("Debug","we made it");
+                }
                 Uri selectedImageUri = data.getData();
                 String fileName = getFileName(selectedImageUri);
 
@@ -405,4 +417,5 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
         selectedPicture = pictureList.get(position);
         pictureAdapter.toggleSelection(position);
     }
+
 }

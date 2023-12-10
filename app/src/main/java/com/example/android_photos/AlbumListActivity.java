@@ -172,9 +172,11 @@ public class AlbumListActivity extends AppCompatActivity {
 
                 // Update your UI or perform any other actions with the updated list
                 // For example, you might want to update your RecyclerView with the new data
-                savedAlbums = loadAlbumsFromFile();
+                savedAlbums.clear();
+                savedAlbums.addAll((updatedSavedAlbums));
                 allAlbums = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, savedAlbums);
                 albumListView.setAdapter(allAlbums);
+                saveAlbumsToFile(savedAlbums);
                 allAlbums.notifyDataSetChanged();
             }
         }
@@ -255,8 +257,7 @@ public class AlbumListActivity extends AppCompatActivity {
     }
     private void checkAndRequestPermissions() {
         String[] permissions = {
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                Manifest.permission.READ_MEDIA_IMAGES
                 // Add other necessary permissions
         };
 
