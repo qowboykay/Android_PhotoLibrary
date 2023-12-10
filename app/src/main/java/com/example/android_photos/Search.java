@@ -6,7 +6,6 @@ import java.util.Locale;
 
 public class Search {
 
-    // Assuming you have a list of all albums in your main activity or a similar global access point
     private List<Album> allAlbums;
 
     public Search(List<Album> allAlbums) {
