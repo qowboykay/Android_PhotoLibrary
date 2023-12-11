@@ -188,7 +188,7 @@ public class PictureViewActivity extends AppCompatActivity {
 
 
     private void updateTagsTextView() {
-        Picture currentPicture = pictureList.get(currentPictureIndex);
+        currentPicture = pictureList.get(currentPictureIndex);
         ArrayList<Tag> tags = currentPicture.getPictureTags();
         StringBuilder tagsText = new StringBuilder();
 
@@ -250,6 +250,15 @@ public class PictureViewActivity extends AppCompatActivity {
     private void setResultAndFinish() {
         Intent resultIntent = new Intent();
         resultIntent.putExtra("updatedSelectedAlbum", selectedAlbum);
+        for (Picture picture : selectedAlbum.getPics()) {
+            Log.d("Photo", "  Photo: " + picture.getFileName());
+
+            for (Tag tag : picture.getTags()) {
+                Log.d("Tag", "    Tag: " + tag.getTagName() + ", Values: " + tag.getAllTagValues());
+            }
+        }
+
+        Log.d("Divider", "");
         setResult(RESULT_OK, resultIntent);
         finish();
     }

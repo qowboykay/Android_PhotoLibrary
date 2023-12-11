@@ -22,8 +22,8 @@ public class Album implements Serializable {
             this.pics = new ArrayList<>();
         }
 
-        public void setAlbum(String albumName) {
-            this.albumName = albumName;
+        public void setAlbum(Album newAlbum) {
+            this.pics = newAlbum.getPics();
 
         }
         public void removePicture(Picture selectedPicture){
@@ -134,7 +134,6 @@ public class Album implements Serializable {
         public String toString() {
             return albumName;
         }
-
 
 }
 

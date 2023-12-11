@@ -193,14 +193,16 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == pictureViewRequestCode && resultCode == RESULT_OK) {
-            if(data != null){
-                selectedAlbum = (Album) data.getSerializableExtra("updatedSelectedAlbum");
-                pictureList = selectedAlbum.returnPictures();
+            if (data != null) {
+                // Handle the updated selectedAlbum from the PictureViewActivity
+                Album newSelectedAlbum = (Album) data.getSerializableExtra("updatedSelectedAlbum");
+                selectedAlbum.setAlbum(newSelectedAlbum);
+                pictureList = newSelectedAlbum.returnPictures();
                 pictureAdapter = new PictureAdapter(pictureList);
                 pictureAdapter.setOnItemClickListener(this);
                 pictureRecyclerView.setAdapter(pictureAdapter);
+                // Save all albums to file
                 saveAlbumsToFile(savedAlbums);
-                Log.d("Debug", "Saved!!!!");
             }
         }
         if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
@@ -299,37 +301,6 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
             setResult(RESULT_OK, resultIntent);
             finish();
         }
-        private void saveAlbums() {
-            try {
-                // Before saving
-                FileOutputStream fos = openFileOutput("saved_albums.ser", Context.MODE_PRIVATE);
-                ObjectOutputStream oos = new ObjectOutputStream(fos);
-                Log.d("Debug", "Saved Albums: " + savedAlbums.toString());
-                oos.writeObject(savedAlbums);
-                oos.close();
-                fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-    @SuppressWarnings("unchecked")
-    private void loadAlbums() {
-        try {
-            FileInputStream fis = openFileInput("saved_albums.ser");
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            savedAlbums = (ArrayList<Album>) ois.readObject();
-            ois.close();
-            fis.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        // If the savedAlbums list is null, initialize it
-        if (savedAlbums == null) {
-            savedAlbums = new ArrayList<>();
-        }
-    }
 
     protected void saveAlbumsToFile(ArrayList<Album> albums) {
         Log.d("SaveAlbums", "Saving albums to file");
@@ -345,6 +316,16 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
 
             // Write each Parcelable object to the file
             for (Album album : albums) {
+                    // Log album details for debugging
+                    Log.d("SaveAlbums", "Album: " + album.getAlbumName());
+
+                    for (Picture picture : album.getPics()) {
+                        Log.d("SaveAlbums", "  Photo: " + picture.getFileName());
+
+                        for (Tag tag : picture.getTags()) {
+                            Log.d("SaveAlbums", "    Tag: " + tag.getTagName() + ", Values: " + tag.getAllTagValues());
+                        }
+                    }
                 objectOutputStream.writeObject(album);
             }
 
