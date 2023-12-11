@@ -3,6 +3,7 @@ package com.example.android_photos;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class Search {
 
@@ -12,55 +13,65 @@ public class Search {
         this.allAlbums = allAlbums;
     }
 
-    /**
-     * Search for photos across all albums by tag-value pairs.
-     * @param tagName Type of the tag (person or location).
-     * @param value The value to search for.
-     * @return A list of pictures that match the search criteria.
-     */
-    public List<Picture> searchByTag(String tagName, String value) {
-        List<Picture> matchedPictures = new ArrayList<>();
+    public List<Picture> searchPhotos(String searchType, String tagName1, String tagValue1, String tagName2, String tagValue2) {
+        List<Picture> results = new ArrayList<>();
+
         for (Album album : allAlbums) {
-            for (Picture picture : album.getPics()) {
-                for (Tag tag : picture.getTags()) {
-                    if (tag.getTagName().equalsIgnoreCase(tagName)) {
-                        for (String tagValue : tag.getAllTagValues()) {
-                            if (tagValue.toLowerCase(Locale.ROOT).startsWith(value.toLowerCase(Locale.ROOT))) {
-                                matchedPictures.add(picture);
-                                break; // Break after finding the first matching value for this tag
-                            }
-                        }
-                    }
+            for (Picture pic : album.getPics()) {
+                boolean matchesFirstCriteria = matchesCriteria(pic, tagName1, tagValue1);
+                boolean matchesSecondCriteria = (tagName2 != null && !tagName2.isEmpty()) && matchesCriteria(pic, tagName2, tagValue2);
+
+                switch (searchType.toLowerCase()) {
+                    case "single":
+                        if (matchesFirstCriteria) results.add(pic);
+                        break;
+                    case "conjunctive":
+                        if (matchesFirstCriteria && matchesSecondCriteria) results.add(pic);
+                        break;
+                    case "disjunctive":
+                        if (matchesFirstCriteria || matchesSecondCriteria) results.add(pic);
+                        break;
                 }
             }
         }
-        return matchedPictures;
+
+        return results;
     }
 
+    private boolean matchesCriteria(Picture pic, String tagName, String tagValue) {
+        if (tagName == null || tagValue == null || tagName.isEmpty() || tagValue.isEmpty()) {
+            return false;
+        }
 
-    /**
-     * Auto-complete suggestion for the search input.
-     * @param tagName Type of the tag (person or location).
-     * @param input The input text to match.
-     * @return A list of suggested completions.
-     */
-    public List<String> autoComplete(String tagName, String input) {
+        for (Tag tag : pic.getTags()) {
+            if (tag.getTagName().equalsIgnoreCase(tagName)) {
+                // Assuming the tag object itself represents a tag-value
+                // Compare the tag's string representation with the tagValue
+                if (tag.toString().toLowerCase().contains(tagValue.toLowerCase())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public List<String> getAutoCompleteSuggestions(String tagName, String startingSubstring) {
         List<String> suggestions = new ArrayList<>();
+
+        if (tagName == null || startingSubstring == null || tagName.isEmpty() || startingSubstring.isEmpty()) {
+            return suggestions;
+        }
+
         for (Album album : allAlbums) {
-            for (Picture picture : album.getPics()) {
-                for (Tag tag : picture.getTags()) {
-                    if (tag.getTagName().equalsIgnoreCase(tagName)) {
-                        for (String tagValue : tag.getAllTagValues()) {
-                            if (tagValue.toLowerCase(Locale.ROOT).startsWith(input.toLowerCase(Locale.ROOT))) {
-                                if (!suggestions.contains(tagValue)) {
-                                    suggestions.add(tagValue);
-                                }
-                            }
-                        }
+            for (Picture pic : album.getPics()) {
+                for (Tag tag : pic.getTags()) {
+                    if (tag.getTagName().equalsIgnoreCase(tagName) && tag.toString().toLowerCase().startsWith(startingSubstring.toLowerCase())) {
+                        suggestions.add(tag.toString());
                     }
                 }
             }
         }
-        return suggestions;
+
+        return suggestions.stream().distinct().collect(Collectors.toList());
     }
 }
