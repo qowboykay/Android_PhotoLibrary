@@ -3,6 +3,7 @@ package com.example.android_photos;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -53,6 +55,7 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
     private Button openButton;
     private Button searchButton;
     private Button addButton;
+    private Button moveButton;
     private RecyclerView pictureRecyclerView;
     private Album selectedAlbum;
     private PictureAdapter pictureAdapter;
@@ -101,12 +104,14 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
         openButton = findViewById(R.id.openButton);
         searchButton = findViewById(R.id.searchButton);
         addButton = findViewById(R.id.addButton);
+        moveButton = findViewById(R.id.moveButton);
 
         backButton.setOnClickListener(v -> onBackButtonClicked());
         deleteButton.setOnClickListener(v -> onDeleteButtonClicked());
         openButton.setOnClickListener(v -> onOpenButtonClicked());
         addButton.setOnClickListener(v -> onAddButtonClicked());
         searchButton.setOnClickListener(v -> onSearchButtonClicked());
+        moveButton.setOnClickListener(v -> onMoveButtonClicked());
     }
 
 
@@ -123,45 +128,65 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
                 .collect(Collectors.toList());
 
         Log.d("Debug","Saved Photos:"  + allPictureUris);
+        showToast("Returning to Albums List");
         setResultAndFinish();
     }
 
     private void onDeleteButtonClicked() {
-        List<Integer> selectedPositions = pictureAdapter.getSelectedPositions();
-        for (int i = selectedPositions.size() - 1; i >= 0; i--) {
-            int position = selectedPositions.get(i);
-            pictureList.remove(position);
-            pictureAdapter.notifyItemRemoved(position);
+        if(selectedPicture != null) {
+            List<Integer> selectedPositions = pictureAdapter.getSelectedPositions();
+            for (int i = selectedPositions.size() - 1; i >= 0; i--) {
+                int position = selectedPositions.get(i);
+                pictureList.remove(position);
+                pictureAdapter.notifyItemRemoved(position);
+            }
+            selectedAlbum.addPictureList(pictureList);
+            pictureAdapter.clearSelection();
+            saveAlbumsToFile(savedAlbums);
+            showToast("Successfully Deleted!");
+        }else{
+            showToast("Please select a picture to delete first");
         }
-        selectedAlbum.addPictureList(pictureList);
-        pictureAdapter.clearSelection();
-        saveAlbumsToFile(savedAlbums);
     }
 
     private void onOpenButtonClicked() {
-        Intent intent = new Intent(this, PictureViewActivity.class);
-        intent.putExtra("selectedPictureUri", selectedPicture.getUri().toString());
-        intent.putExtra("selectedAlbum", selectedAlbum);
-        startActivityForResult(intent, pictureViewRequestCode); // Use a unique request code
+        if(selectedPicture != null) {
+            Intent intent = new Intent(this, PictureViewActivity.class);
+            intent.putExtra("selectedPictureUri", selectedPicture.getUri().toString());
+            intent.putExtra("selectedAlbum", selectedAlbum);
+            showToast("Successfully Opened!");
+            startActivityForResult(intent, pictureViewRequestCode); // Use a unique request code
+        }else{
+            showToast("Please select a picture to open display screen");
+        }
     }
 
 
     public void onSearchButtonClicked() {
-        Intent intent = new Intent(this, SearchActivity.class);
-        // Since ArrayList<Album> is Serializable, we can pass it directly as an extra
-        intent.putExtra("savedAlbums", savedAlbums);
-        startActivity(intent);
+            Intent intent = new Intent(this, SearchActivity.class);
+            // Since ArrayList<Album> is Serializable, we can pass it directly as an extra
+            intent.putExtra("savedAlbums", savedAlbums);
+            showToast("Opening Search!");
+            startActivity(intent);
+
     }
 
 
     private void onAddButtonClicked() {
-        Log.d("Debug", "Add button clicked");
             Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
             photoPickerIntent.setType("image/*");
             Log.d("Debug", "passed permission");
             if (photoPickerIntent.resolveActivity(getPackageManager()) != null) {
                 startActivityForResult(photoPickerIntent, REQUEST_IMAGE_GET);
             }
+    }
+    private void onMoveButtonClicked(){
+        if(selectedPicture != null) {
+            showMoveToAlbumDialog();
+        }else{
+            showToast("Please select a picture before moving");
+        }
+
     }
 
 
@@ -170,7 +195,10 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
         if(requestCode == pictureViewRequestCode && resultCode == RESULT_OK) {
             if(data != null){
                 selectedAlbum = (Album) data.getSerializableExtra("updatedSelectedAlbum");
-                pictureAdapter.notifyDataSetChanged();
+                pictureList = selectedAlbum.returnPictures();
+                pictureAdapter = new PictureAdapter(pictureList);
+                pictureAdapter.setOnItemClickListener(this);
+                pictureRecyclerView.setAdapter(pictureAdapter);
                 saveAlbumsToFile(savedAlbums);
                 Log.d("Debug", "Saved!!!!");
             }
@@ -202,6 +230,7 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+                    showToast("Successfully Added!");
                     selectedAlbum.addPicture(selectedPicture);
                     pictureAdapter.notifyDataSetChanged();
                     saveAlbumsToFile(savedAlbums);
@@ -423,4 +452,58 @@ public class AlbumViewActivity extends AppCompatActivity implements PictureAdapt
         pictureAdapter.toggleSelection(position);
     }
 
+    private void showMoveToAlbumDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Move Picture To Album");
+
+        // Get the list of album names from savedAlbums
+        ArrayList<String> albumNames = new ArrayList<>();
+        for (Album album : savedAlbums) {
+            albumNames.add(album.getAlbumName());
+        }
+
+        // Convert the ArrayList to a string array
+        final String[] albumArray = albumNames.toArray(new String[0]);
+
+        builder.setItems(albumArray, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Move the picture to the selected album
+                Album destinationAlbum = savedAlbums.get(which);
+                movePictureToAlbum(destinationAlbum);
+                showToast("Picture has been moved!");
+
+                // Save the updated albums
+                saveAlbumsToFile(savedAlbums);
+
+                // Update the displayed picture and pictureAdapter
+                updateDisplayedPicture();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void updateDisplayedPicture() {
+        // Get the latest list of pictures from the selected album
+        pictureList = selectedAlbum.returnPictures();
+        pictureAdapter.setPictureList(pictureList);
+
+        // Notify the adapter that the data has changed
+        pictureAdapter.notifyDataSetChanged();
+    }
+
+    private void movePictureToAlbum(Album destinationAlbum) {
+        // Remove the picture from the current album
+        selectedAlbum.removePicture(selectedPicture);
+
+        // Add the picture to the destination album
+        destinationAlbum.addPicture(selectedPicture);
+    }
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
 }

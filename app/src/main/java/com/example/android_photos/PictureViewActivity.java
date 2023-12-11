@@ -33,7 +33,7 @@ public class PictureViewActivity extends AppCompatActivity {
     private Button nextButton;
     private Button prevButton;
     private Button backButton;
-    private Button moveButton;
+    private Button deleteTagButton;
     private TextView tagsTextView;
     private ImageView imageView;
     private Album selectedAlbum;
@@ -63,7 +63,7 @@ public class PictureViewActivity extends AppCompatActivity {
         }
         tagsTextView = findViewById(R.id.tagsTextView);
         backButton = findViewById(R.id.backButton);
-        moveButton = findViewById(R.id.moveButton);
+        deleteTagButton = findViewById(R.id.deleteTagButton);
         prevButton = findViewById(R.id.prevButton);
         nextButton = findViewById(R.id.nextButton);
         addTagButton = findViewById(R.id.addTagButton);
@@ -72,7 +72,7 @@ public class PictureViewActivity extends AppCompatActivity {
         updateTagsTextView();
 
         backButton.setOnClickListener(v -> onBackButtonClicked());
-        moveButton.setOnClickListener(v -> onMoveButtonClicked());
+        deleteTagButton.setOnClickListener(v -> onDeleteTagButtonClicked());
         prevButton.setOnClickListener(v -> onPrevButtonClicked());
         nextButton.setOnClickListener(v -> onNextButtonClicked());
         addTagButton.setOnClickListener(v -> onAddTagButtonClicked());
@@ -82,9 +82,42 @@ public class PictureViewActivity extends AppCompatActivity {
     private void onBackButtonClicked(){
         setResultAndFinish();
     }
-    private void onMoveButtonClicked(){
+    private void onDeleteTagButtonClicked() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Tag to Delete");
 
+        Picture currentPicture = pictureList.get(currentPictureIndex);
+        ArrayList<Tag> tags = currentPicture.getPictureTags();
+        String[] tagInfoArray = new String[tags.size()];
+
+        for (int i = 0; i < tags.size(); i++) {
+            Tag tag = tags.get(i);
+            String tagInfo = tag.getTagName() + ": " + tag.getAllTagValues();
+            tagInfoArray[i] = tagInfo;
+        }
+
+        builder.setItems(tagInfoArray, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Delete the selected tag
+                Tag selectedTag = tags.get(which);
+                currentPicture.removeTag(selectedTag);
+
+                // Save the updated albums
+                saveAlbumsToFile(savedAlbums);
+
+                // Update the tagsTextView to display the updated tags
+                updateTagsTextView();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
+
+
 
     private void onPrevButtonClicked(){
         if (currentPictureIndex > 0) {

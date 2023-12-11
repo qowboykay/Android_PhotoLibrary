@@ -26,11 +26,24 @@
             android:layout_marginTop="8dp"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/backButton"
-                android:layout_width="100dp"
-                android:layout_height="48dp"
-                android:text="@string/back" />
+            <LinearLayout
+                android:layout_width="102dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/backButton"
+                    android:layout_width="100dp"
+                    android:layout_height="48dp"
+                    android:text="@string/back" />
+
+                <Button
+                    android:id="@+id/moveButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/move" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="118dp"

@@ -44,6 +44,9 @@ public class Picture implements Serializable {
     public String getCaption() {
         return caption;
     }
+    public void removeTag(Tag specificTag){
+        this.tags.removeIf(tag -> tag.equals(specificTag));
+    }
 
 
     public void recaptionPicture(String caption) {
