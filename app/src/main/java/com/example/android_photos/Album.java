@@ -26,6 +26,9 @@ public class Album implements Serializable {
             this.albumName = albumName;
 
         }
+        public void removePicture(Picture selectedPicture){
+            this.pics.removeIf(picture -> picture.equals(selectedPicture));
+        }
 
         public void setAdapter(ArrayAdapter<Album> albums){
             this.albums = albums;

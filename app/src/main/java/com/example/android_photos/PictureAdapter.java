@@ -87,7 +87,9 @@ public class PictureAdapter extends RecyclerView.Adapter<PictureAdapter.ViewHold
         }
         notifyItemChanged(position);
     }
-
+    public void setPictureList(ArrayList<Picture> selectedPictureList){
+        this.pictureList = selectedPictureList;
+    }
     public void clearSelection() {
         selectedPositions.clear();
         notifyDataSetChanged();
