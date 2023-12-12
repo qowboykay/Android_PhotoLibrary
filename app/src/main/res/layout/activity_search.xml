@@ -17,7 +17,7 @@
         android:id="@+id/searchTagEditText1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter first search tag"
+        android:hint="Enter location search tag"
         android:layout_below="@id/backButton"
         android:layout_marginTop="16dp"/>
 
@@ -25,7 +25,7 @@
         android:id="@+id/searchTagEditText2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter second search tag"
+        android:hint="Enter person search tag"
         android:layout_below="@id/searchTagEditText1"
         android:layout_marginTop="16dp"/>
 
