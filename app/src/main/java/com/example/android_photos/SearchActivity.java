@@ -32,19 +32,6 @@ public class SearchActivity extends AppCompatActivity {
         setContentView(R.layout.activity_search);
 
         savedAlbums = (ArrayList<Album>) getIntent().getSerializableExtra("savedAlbums");
-        for (Album album : savedAlbums) {
-            Log.d("Album", "Album: " + album.getAlbumName());
-
-            for (Picture picture : album.getPics()) {
-                Log.d("Photo", "  Photo: " + picture.getFileName());
-
-                for (Tag tag : picture.getTags()) {
-                    Log.d("Tag", "    Tag: " + tag.getTagName() + ", Values: " + tag.getAllTagValues());
-                }
-            }
-
-            Log.d("Divider", ""); // Add a log with an empty message to act as a divider between albums for clarity
-        }
         backButton = findViewById(R.id.backButton);
         searchButton = findViewById(R.id.searchButton);
         searchTagEditText1 = findViewById(R.id.searchTagEditText1);
@@ -97,12 +84,17 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private void updateAutoCompleteSuggestions(String input, ArrayAdapter<String> adapter, String tagType) {
+        Log.d("Debug", "Updating AutoComplete Suggestions. Input: " + input + ", Tag Type: " + tagType);
+
         if (input.isEmpty()) {
             adapter.clear();
             return;
         }
+
         Search search = new Search(savedAlbums);
         List<String> suggestions = search.getAutoCompleteSuggestions(tagType, input);
+
+        Log.d("Debug", "Suggestions: " + suggestions);
 
         adapter.clear();
         adapter.addAll(suggestions);

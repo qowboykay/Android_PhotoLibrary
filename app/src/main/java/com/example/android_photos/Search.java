@@ -1,5 +1,7 @@
 package com.example.android_photos;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +59,7 @@ public class Search {
 
     public List<String> getAutoCompleteSuggestions(String tagName, String startingSubstring) {
         List<String> suggestions = new ArrayList<>();
-
+        Log.d("Debug", "tagName: " + tagName + ", startingSubstring: " + startingSubstring);
         if (tagName == null || startingSubstring == null || tagName.isEmpty() || startingSubstring.isEmpty()) {
             return suggestions;
         }
@@ -65,8 +67,15 @@ public class Search {
         for (Album album : allAlbums) {
             for (Picture pic : album.getPics()) {
                 for (Tag tag : pic.getTags()) {
-                    if (tag.getTagName().equalsIgnoreCase(tagName) && tag.toString().toLowerCase().startsWith(startingSubstring.toLowerCase())) {
-                        suggestions.add(tag.toString());
+                    if (tag.getTagName().equalsIgnoreCase(tagName)) {
+                        // Iterate through all tag values
+                        for (String tagValue : tag.getAllTagValues()) {
+                            // Check if the tag value starts with the provided substring
+                            if (tagValue.toLowerCase().startsWith(startingSubstring.toLowerCase())) {
+                                // If it matches, add the tagValue to suggestions
+                                suggestions.add(tagValue);
+                            }
+                        }
                     }
                 }
             }
