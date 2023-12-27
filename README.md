@@ -1,8 +1,8 @@
-#Android Photo Library App
+# Android Photo Library App
 
 I recently developed an Android application that serves as a photo library, adapted from my previous JavaFX desktop application. This mobile app offers a personalized, user-friendly experience for managing and browsing through digital photo albums. I've ensured that the core functionalities of the JavaFX project are retained and optimized for Android, making it more accessible and convenient for users on their smartphones.
 
-##Features
+## Features
 Home Screen
 Album Management: The app opens with a home screen displaying all albums saved from previous sessions. Users can effortlessly create, delete, and rename albums. Opening an album reveals all its photos in thumbnail format.
 Photo Management within Albums
