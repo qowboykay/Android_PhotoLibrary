@@ -1,6 +1,6 @@
 # Android Photo Library App
 
-I recently developed an Android application that serves as a photo library, adapted from my previous JavaFX desktop application. This mobile app offers a personalized, user-friendly experience for managing and browsing through digital photo albums. I've ensured that the core functionalities of the JavaFX project are retained and optimized for Android, making it more accessible and convenient for users on their smartphones.
+I recently developed an Android application that serves as a photo library, adapted from my previous JavaFX Photo Library desktop application. This mobile app offers a personalized, user-friendly experience for managing and browsing through digital photo albums. I've ensured that the core functionalities of my previous project are retained and optimized for Android, making it more accessible and convenient for users on their smartphones.
 
 ## Features
 ### Home Screen
